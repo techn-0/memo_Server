@@ -5,7 +5,6 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-
 client = MongoClient('mongodb://test:test@localhost',27017)
 db = client.dbjungle
 
