@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <!-- 필요한 메타 태그 -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css?family=Stylish&display=swap" rel="stylesheet">
+
+    <title>크래프톤 정글 | 정휘건</title>
+
+    <!-- Custom CSS -->
+    <style type="text/css">
+        * {
+            font-family: "Stylish", sans-serif;
+        }
+
+        .wrap {
+            width: 900px;
+            margin: auto;
+        }
+
+        .card-title {
+            font-weight: bold;
+        }
+
+        .card-likes {
+            margin-top: 10px;
+        }
+
+        .edit-delete-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+
+        .new-title,
+        .new-text {
+            display: none;
+            width: 100%;
+        }
+    </style>
+
+    <!-- JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            $("#card-list").html("");
+            showArticles();
+        });
+
+        function postArticle() {
+            let title = $("#memo-title").val();
+            let content = $("#memo-content").val();
+
+            $.ajax({
+                type: "POST",
+                url: "/memo",
+                data: { title_give: title, content_give: content },
+                success: function (response) {
+                    if (response["result"] == "success") {
+                        alert("메모가 저장되었습니다.");
+                        showArticles();
+                    } else {
+                        alert("서버 오류!");
+                    }
+                }
+            });
+        }
+
+        function showArticles() {
+            $.ajax({
+                type: "GET",
+                url: "/memo",
+                success: function (response) {
+                    let articles = response["articles"];
+                    articles.sort((a, b) => b.likes - a.likes);
+
+                    $("#card-list").empty();
+
+                    articles.forEach(function (article) {
+                        makeCard(article);
+                    });
+                },
+                error: function () {
+                    alert("메모 불러오기에 실패했습니다.");
+                }
+            });
+        }
+
+        function makeCard(article) {
+            let cardHtml = `<div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">${article.title}</h5>
+                            <p class="card-text">${article.content}</p>
+                            <p class="card-likes">${article.likes} </p>
+                            <div class="edit-delete-buttons">
+                                <button type="button" class="btn btn-info edit-button">수정</button>
+                                <button type="button" class="btn btn-danger delete-button">삭제</button>
+                                <button type="button" class="btn btn-primary link-like">좋아요!👍</button>
+                            </div>
+                            <div>
+                                <input class="form-control new-title" value="${article.title}">
+                            </div>
+                            <div>
+                                <textarea class="form-control new-text">${article.content}</textarea>
+                            </div>
+                            <button type="button" class="btn btn-success save-button" style = display:none>저장</button>
+                        </div>
+                    </div>`;
+
+            $("#card-list").append(cardHtml);
+
+            // 수정 버튼 동작
+            $(".edit-button").last().click(function () {
+                $(this).closest('.card-body').find('.card-title, .card-text, .edit-delete-buttons, .card-likes').hide();
+                $(this).closest('.card-body').find('.new-title, .new-text, .save-button').show();
+            });
+
+
+
+            // 저장 버튼 동작
+            $(".save-button").click(function () {
+
+                let articleId = article.time_id; // 시간 사용
+                let newTitle = $(this).closest('.card-body').find('.new-title').val();
+                let newText = $(this).closest('.card-body').find('.new-text').val();
+
+                $.ajax({
+                    type: "PUT",
+                    url: "/memo/update",
+                    data: { time_id: articleId, title: newTitle, content: newText },
+                    success: function (response) {
+                        if (response["result"] === "success") {
+                            alert("수정이 완료되었습니다.");
+                            showArticles();
+                        } else {
+                            alert("수정에 실패했습니다.");
+                        }
+                    }
+                });
+            });
+
+
+
+
+            //삭제
+            $(".delete-button").last().click(function () {
+                let articleId = article.time_id;
+
+                $.ajax({
+                    type: "DELETE",
+                    url: "/memo",
+                    data: { time_id: articleId },
+
+                    success: function (response) {
+                        if (response["result"] == "success") {
+                            alert("메모가 삭제되었습니다.");
+                            showArticles();
+                        } else {
+                            alert("삭제에 실패했습니다.");
+                        }
+                    }
+                });
+            });
+
+
+
+            // 좋아요 동작
+            $(".link-like").last().click(function () {
+                let articleId = article.time_id;
+
+                $.ajax({
+                    type: "PUT",
+                    url: "/memo/like",
+                    data: { time_id: articleId },
+
+                    success: function (response) {
+                        if (response["result"] == "success") {
+                            showArticles();
+                        } else {
+                            alert("좋아요 실패ㅠㅠ");
+                        }
+                    }
+                });
+            });
+        }
+
+    </script>
+</head>
+
+<body>
+    <div class="wrap">
+        <div class="jumbotron">
+            <h1 class="display-4" style="float: left">나홀로 메모장 <span class="badge badge-secondary">Ver2.0</span>
+            </h1>
+
+            <div id="post-box">
+                <div>
+                    <div class="form-group">
+                        <input id="memo-title" class="form-control" placeholder="제목을 입력하세요">
+                    </div>
+                    <div class="form-group">
+                        <textarea id="memo-content" class="form-control" rows="2" placeholder="내용을 입력하세요"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary" onclick="postArticle()">저장하기</button>
+                </div>
+            </div>
+        </div>
+        <div id="card-list" class="card-columns"></div>
+    </div>
+</body>
+
+</html>
