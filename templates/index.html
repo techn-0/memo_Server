@@ -51,10 +51,12 @@
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
     <script>
         $(document).ready(function () {
+            // 페이지 로드 시 메모 리스트를 비우고 메모들을 보여줌
             $("#card-list").html("");
             showArticles();
         });
 
+        // 메모를 서버에 저장하는 함수
         function postArticle() {
             let title = $("#memo-title").val();
             let content = $("#memo-content").val();
@@ -66,7 +68,7 @@
                 success: function (response) {
                     if (response["result"] == "success") {
                         alert("메모가 저장되었습니다.");
-                        showArticles();
+                        showArticles(); // 저장 후 메모 목록을 다시 불러옴
                     } else {
                         alert("서버 오류!");
                     }
@@ -74,18 +76,19 @@
             });
         }
 
+        // 서버에서 메모들을 가져와서 화면에 표시하는 함수
         function showArticles() {
             $.ajax({
                 type: "GET",
                 url: "/memo",
                 success: function (response) {
                     let articles = response["articles"];
-                    articles.sort((a, b) => b.likes - a.likes);
+                    articles.sort((a, b) => b.likes - a.likes); // 좋아요 순으로 정렬
 
-                    $("#card-list").empty();
+                    $("#card-list").empty(); // 기존 메모들을 지움
 
                     articles.forEach(function (article) {
-                        makeCard(article);
+                        makeCard(article); // 각 메모를 카드 형태로 만듦
                     });
                 },
                 error: function () {
@@ -94,6 +97,7 @@
             });
         }
 
+        // 메모를 카드 형태로 만드는 함수
         function makeCard(article) {
             let cardHtml = `<div class="card">
                         <div class="card-body">
@@ -111,24 +115,21 @@
                             <div>
                                 <textarea class="form-control new-text">${article.content}</textarea>
                             </div>
-                            <button type="button" class="btn btn-success save-button" style = display:none>저장</button>
+                            <button type="button" class="btn btn-success save-button" style="display:none">저장</button>
                         </div>
                     </div>`;
 
             $("#card-list").append(cardHtml);
 
-            // 수정 버튼 동작
+            // 수정 버튼 클릭 시
             $(".edit-button").last().click(function () {
                 $(this).closest('.card-body').find('.card-title, .card-text, .edit-delete-buttons, .card-likes').hide();
                 $(this).closest('.card-body').find('.new-title, .new-text, .save-button').show();
             });
 
-
-
-            // 저장 버튼 동작
+            // 저장 버튼 클릭 시
             $(".save-button").click(function () {
-
-                let articleId = article.time_id; // 시간 사용
+                let articleId = article.time_id; // 메모 ID
                 let newTitle = $(this).closest('.card-body').find('.new-title').val();
                 let newText = $(this).closest('.card-body').find('.new-text').val();
 
@@ -139,7 +140,7 @@
                     success: function (response) {
                         if (response["result"] === "success") {
                             alert("수정이 완료되었습니다.");
-                            showArticles();
+                            showArticles(); // 수정 후 메모 목록을 다시 불러옴
                         } else {
                             alert("수정에 실패했습니다.");
                         }
@@ -147,10 +148,7 @@
                 });
             });
 
-
-
-
-            //삭제
+            // 삭제 버튼 클릭 시
             $(".delete-button").last().click(function () {
                 let articleId = article.time_id;
 
@@ -162,7 +160,7 @@
                     success: function (response) {
                         if (response["result"] == "success") {
                             alert("메모가 삭제되었습니다.");
-                            showArticles();
+                            showArticles(); // 삭제 후 메모 목록을 다시 불러옴
                         } else {
                             alert("삭제에 실패했습니다.");
                         }
@@ -170,9 +168,7 @@
                 });
             });
 
-
-
-            // 좋아요 동작
+            // 좋아요 버튼 클릭 시
             $(".link-like").last().click(function () {
                 let articleId = article.time_id;
 
@@ -183,7 +179,7 @@
 
                     success: function (response) {
                         if (response["result"] == "success") {
-                            showArticles();
+                            showArticles(); // 좋아요 후 메모 목록을 다시 불러옴
                         } else {
                             alert("좋아요 실패ㅠㅠ");
                         }
@@ -191,7 +187,6 @@
                 });
             });
         }
-
     </script>
 </head>
 
